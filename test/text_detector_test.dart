@@ -25,4 +25,10 @@ void main() {
   test('PIN code in an address is not flagged', () {
     expect(detector.analyze('Delivery to PIN code 400001'), isEmpty);
   });
+  test('bank warning "do not share your OTP" is not flagged', () {
+  final result = detector.analyze(
+    'Your OTP is 482913. Do not share your OTP with anyone.',
+  );
+  expect(result, isEmpty);
+});
 }
