@@ -1,27 +1,72 @@
-/// One scam-wording rule: if any pattern matches, add [points] once.
 class TextRule {
   final String reason;
   final int points;
   final List<String> keywords;
+  final String? pattern; // optional: a ready-made regex string
 
-  const TextRule(this.reason, this.points, this.keywords);
+  const TextRule(this.reason, this.points, this.keywords, {this.pattern});
 
-  /// Builds one regex like: \b(otp|pin|cvv)\b  (case-insensitive)
   RegExp toRegExp() {
+    if (pattern != null) return RegExp(pattern!, caseSensitive: false);
     final escaped = keywords.map(RegExp.escape).join('|');
     return RegExp('\\b($escaped)\\b', caseSensitive: false);
   }
 }
 
 const List<TextRule> textRules = [
-  TextRule(
-    'Asks for OTP, PIN, CVV or password',
-    25,
-    ['otp', 'pin', 'cvv', 'password'],
-  ),
-  TextRule(
-    'Creates urgency or threatens you',
-    15,
-    ['urgent', 'immediately', 'blocked', 'suspended', 'expire'],
-  ),
+  TextRule('Asks for OTP, PIN, CVV or password', 25, [
+    'your otp',
+    'send otp',
+    'share otp',
+    'enter otp',
+    'your pin',
+    'atm pin',
+    'upi pin',
+    'share pin',
+    'cvv',
+    'your password',
+  ]),
+  TextRule('Creates urgency or threatens you', 15, [
+    'urgent',
+    'immediately',
+    'blocked',
+    'suspended',
+    'expire',
+    'expires',
+    'expired',
+  ]),
+  TextRule('Claims a prize, lottery or cashback', 20, [
+    'you have won',
+    'lottery',
+    'lucky draw',
+    'cashback',
+    'claim your prize',
+  ]),
+  TextRule('KYC or account verification request', 20, [
+    'verify your account',
+    'account verification',
+    'update kyc',
+    'identity verification',
+    'kyc pending',
+    'kyc expired',
+    'pan card update',
+  ]),
+  TextRule('UPI collect / money request', 20, [
+    'send rs',
+    'pay rs',
+    'collect request',
+    'accept the request',
+  ]),
+  TextRule('Legal / arrest threat', 20, [
+    'arrest warrant',
+    'legal action',
+    'case filed',
+    'court notice',
+  ]),
+  TextRule('Asks you to call a number', 10, [
+    'call this number',
+    'call us immediately',
+    'contact on',
+  ]),
+  TextRule('Contains a link', 5, [], pattern: r'https?://|www\.'),
 ];
