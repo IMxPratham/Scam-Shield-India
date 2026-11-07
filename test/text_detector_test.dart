@@ -26,9 +26,22 @@ void main() {
     expect(detector.analyze('Delivery to PIN code 400001'), isEmpty);
   });
   test('bank warning "do not share your OTP" is not flagged', () {
-  final result = detector.analyze(
-    'Your OTP is 482913. Do not share your OTP with anyone.',
-  );
-  expect(result, isEmpty);
-});
+    final result = detector.analyze(
+      'Your OTP is 482913. Do not share your OTP with anyone.',
+    );
+    expect(result, isEmpty);
+  });
+  test('scam asking for OTP is still flagged', () {
+    expect(detector.analyze('Send your OTP now to claim reward'), isNotEmpty);
+  });
+  test('curly apostrophe "don’t share" is not flagged', () {
+    expect(
+      detector.analyze('Your OTP is 1234. Don’t share your OTP.'),
+      isEmpty,
+    );
+  });
+  test('prize bait is flagged with 20 points', () {
+    final result = detector.analyze('You have won a lottery, claim now');
+    expect(result.any((f) => f.points == 20), isTrue);
+  });
 }

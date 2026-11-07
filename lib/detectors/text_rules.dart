@@ -3,29 +3,52 @@ class TextRule {
   final int points;
   final List<String> keywords;
   final String? pattern; // optional: a ready-made regex string
+  final List<String> safeIfContains;
 
-  const TextRule(this.reason, this.points, this.keywords, {this.pattern});
+  const TextRule(
+    this.reason,
+    this.points,
+    this.keywords, {
+    this.pattern,
+    this.safeIfContains = const [],
+  });
 
   RegExp toRegExp() {
     if (pattern != null) return RegExp(pattern!, caseSensitive: false);
     final escaped = keywords.map(RegExp.escape).join('|');
     return RegExp('\\b($escaped)\\b', caseSensitive: false);
   }
+
+  RegExp? toSafeRegExp() {
+    if (safeIfContains.isEmpty) return null;
+    final escaped = safeIfContains.map(RegExp.escape).join('|');
+    return RegExp('\\b($escaped)\\b', caseSensitive: false);
+  }
 }
 
 const List<TextRule> textRules = [
-  TextRule('Asks for OTP, PIN, CVV or password', 25, [
-    'your otp',
-    'send otp',
-    'share otp',
-    'enter otp',
-    'your pin',
-    'atm pin',
-    'upi pin',
-    'share pin',
-    'cvv',
-    'your password',
-  ]),
+  TextRule(
+    'Asks for OTP, PIN, CVV or password',
+    25,
+    [
+      'your otp',
+      'send otp',
+      'share otp',
+      'enter otp',
+      'your pin',
+      'atm pin',
+      'upi pin',
+      'share pin',
+      'cvv',
+      'your password',
+    ],
+    safeIfContains: [
+      'do not share',
+      'never share',
+      "don't share",
+      "don’t share",
+    ],
+  ),
   TextRule('Creates urgency or threatens you', 15, [
     'urgent',
     'immediately',
