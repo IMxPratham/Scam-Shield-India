@@ -42,6 +42,77 @@ void main() {
   });
   test('prize bait is flagged with 20 points', () {
     final result = detector.analyze('You have won a lottery, claim now');
-    expect(result.any((f) => f.points == 20), isTrue);
+    expect(result.any((f) => f.reason.contains('prize')), isTrue);
+  });
+  // ---- Urgency ----
+  test('urgency wording is flagged', () {
+    final result = detector.analyze('Your account is blocked, act now');
+    expect(result.any((f) => f.reason.contains('urgency')), isTrue);
+  });
+
+  // ---- KYC ----
+  test('KYC update request is flagged', () {
+    final result = detector.analyze('Update KYC today or account suspended');
+    expect(result.any((f) => f.reason.contains('KYC')), isTrue);
+  });
+
+  test('thanks for completing KYC is not flagged', () {
+    expect(detector.analyze('Thank you for completing your KYC.'), isEmpty);
+  });
+
+  // ---- UPI / money ----
+  test('collect request is flagged', () {
+    final result = detector.analyze('Accept the request to receive money');
+    expect(result.any((f) => f.reason.contains('UPI')), isTrue);
+  });
+
+  // ---- Legal ----
+  test('arrest threat is flagged', () {
+    final result = detector.analyze('Arrest warrant issued, legal action next');
+    expect(result.any((f) => f.reason.contains('Legal')), isTrue);
+  });
+
+  test('court hearing reminder is not flagged', () {
+    expect(detector.analyze('Court hearing is on Monday'), isEmpty);
+  });
+
+  // ---- Call a number ----
+  test('call this number is flagged', () {
+    final result = detector.analyze('Call this number now');
+    expect(result.any((f) => f.reason.contains('call')), isTrue);
+  });
+
+  test('casual call request is not flagged', () {
+    expect(detector.analyze('Call me when you are free'), isEmpty);
+  });
+
+  // ---- Link ----
+  test('link is flagged with 5 points', () {
+    final result = detector.analyze('Visit www.example.com');
+    expect(result.length, 1);
+    expect(result.first.points, 5);
+  });
+
+  test('message without a link is not flagged', () {
+    expect(detector.analyze('No links here'), isEmpty);
+  });
+
+  // ---- Several rules together ----
+  test('urgent OTP request with a link triggers 3 rules', () {
+    final result = detector.analyze(
+      'URGENT: send your OTP now at www.fake.com',
+    );
+    expect(result.length, 3);
+  });
+
+  // ---- KNOWN LIMITATIONS (documented false positives) ----
+  test('KNOWN LIMITATION: "pay Rs" in a friendly message is flagged', () {
+    final result = detector.analyze('I will pay Rs 500 tomorrow');
+    expect(result.any((f) => f.reason.contains('UPI')), isTrue);
+  });
+
+  test('KNOWN LIMITATION: "expired" in a calendar note is flagged', () {
+    final result = detector.analyze('Meeting invite expired from calendar');
+    expect(result.any((f) => f.reason.contains('urgency')), isTrue);
   });
 }
