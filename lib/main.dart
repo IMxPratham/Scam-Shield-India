@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/app_database.dart';
+import 'data/scan_repository.dart';
 import 'detectors/text_detector.dart';
 import 'detectors/url_detector.dart';
 import 'providers/scan_provider.dart';
@@ -16,9 +18,16 @@ class ScamShieldApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      // The detector list is built here, in one place.
-      create: (_) => ScanProvider(ScanService([TextDetector(), UrlDetector()])),
+    return MultiProvider(
+      providers: [
+        Provider<ScanRepository>(create: (_) => ScanRepository(AppDatabase())),
+        ChangeNotifierProvider<ScanProvider>(
+          create: (ctx) => ScanProvider(
+            ScanService([TextDetector(), UrlDetector()]),
+            repository: ctx.read<ScanRepository>(),
+          ),
+        ),
+      ],
       child: MaterialApp(
         title: 'ScamShield India',
         theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
