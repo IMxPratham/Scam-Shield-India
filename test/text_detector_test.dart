@@ -104,15 +104,36 @@ void main() {
     );
     expect(result.length, 3);
   });
-
-  // ---- KNOWN LIMITATIONS (documented false positives) ----
-  test('KNOWN LIMITATION: "pay Rs" in a friendly message is flagged', () {
-    final result = detector.analyze('I will pay Rs 500 tomorrow');
-    expect(result.any((f) => f.reason.contains('UPI')), isTrue);
-  });
-
   test('KNOWN LIMITATION: "expired" in a calendar note is flagged', () {
     final result = detector.analyze('Meeting invite expired from calendar');
     expect(result.any((f) => f.reason.contains('urgency')), isTrue);
   });
+  test('"I will pay Rs 500 tomorrow" is not a money request', () {
+    final result = detector.analyze('I will pay Rs 500 tomorrow');
+    expect(result.any((f) => f.reason.contains('UPI')), isFalse);
+  });
+
+  test('"Pay Rs 5000 to this account now" is still flagged', () {
+    final result = detector.analyze('Pay Rs 5000 to this account now');
+    expect(result.any((f) => f.reason.contains('UPI')), isTrue);
+  });
+  test('"Pay 1000 for token and win" is flagged', () {
+    final r = detector.analyze('Pay 1000 for token and win');
+    expect(r.any((f) => f.reason.contains('UPI')), isTrue);
+  });
+
+  test('"I will pay Rs 500 tomorrow" is not flagged', () {
+    final r = detector.analyze('I will pay Rs 500 tomorrow');
+    expect(r.any((f) => f.reason.contains('UPI')), isFalse);
+  });
+
+  test(
+    '"I will pay you 500000 if you send Rs 1000 first" is still flagged',
+    () {
+      final r = detector.analyze(
+        'I will pay you 500000 if you send Rs 1000 first',
+      );
+      expect(r.any((f) => f.reason.contains('UPI')), isTrue);
+    },
+  );
 }

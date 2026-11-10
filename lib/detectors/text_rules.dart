@@ -74,12 +74,14 @@ const List<TextRule> textRules = [
     'kyc expired',
     'pan card update',
   ]),
-  TextRule('UPI collect / money request', 20, [
-    'send rs',
-    'pay rs',
-    'collect request',
-    'accept the request',
-  ]),
+  TextRule(
+    'UPI collect / money request',
+    20,
+    [],
+    pattern:
+        r'(?<!\bi will )(?<!\bi’ll )(?<!\bi\x27ll )\b(pay|send|transfer)\s+(rs\.?|₹|inr)?\s*\d+'
+        r'|collect request|accept the request',
+  ),
   TextRule('Legal / arrest threat', 20, [
     'arrest warrant',
     'legal action',
