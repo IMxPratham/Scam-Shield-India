@@ -80,6 +80,12 @@ void main() {
     test('bare sbi-kyc.xyz scores 45', () {
       expect(score('sbi-kyc.xyz'), 45);
     });
+    test('unrelated .co.in name is NOT a look-alike', () {
+      expect(score('https://abc.co.in'), 0);
+    });
+    test('transposed letters hdfcbnak.com is still a look-alike', () {
+      expect(score('https://hdfcbnak.com'), 35);
+    });
   });
 
   group('messages with links', () {

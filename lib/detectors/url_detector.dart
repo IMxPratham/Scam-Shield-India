@@ -116,10 +116,17 @@ List<Finding> _analyzeLink(String link) {
   return findings;
 }
 
+// "sbi.co.in" -> "sbi", "hdfcbank.com" -> "hdfcbank"
+String _nameOf(String domain) => domain.split('.').first;
+
 String? _lookalikeOf(String owner) {
+  final name = _nameOf(owner);
   for (final official in officialDomains) {
-    final distance = levenshtein(owner, official);
-    if (distance >= 1 && distance <= 2) return official;
+    final officialName = _nameOf(official);
+    // Short names allow 1 edit, longer names allow 2.
+    final allowed = officialName.length <= 5 ? 1 : 2;
+    final distance = levenshtein(name, officialName);
+    if (distance >= 1 && distance <= allowed) return official;
   }
   return null;
 }
