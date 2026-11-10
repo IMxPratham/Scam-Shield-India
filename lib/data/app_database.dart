@@ -6,13 +6,18 @@ class AppDatabase {
   static const String _fileName = 'scamshield.db';
   static const int _version = 1;
 
+  /// null = the real file on the phone. Tests pass inMemoryDatabasePath.
+  final String? _path;
+
+  AppDatabase({this._path});
+
   Future<Database>? _opening;
 
   /// Opens the database once. Later calls reuse the same Future.
   Future<Database> get database => _opening ??= _open();
 
   Future<Database> _open() async {
-    final path = join(await getDatabasesPath(), _fileName);
+    final path = _path ?? join(await getDatabasesPath(), _fileName);
     return openDatabase(
       path,
       version: _version,
