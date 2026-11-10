@@ -67,6 +67,19 @@ class ResultScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+          if (result.failedChecks > 0)
+            Card(
+              color: Colors.amber.shade100,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  '${result.failedChecks} check(s) could not run, so this '
+                  'result may be incomplete. Be extra careful.',
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
           const Text('Why:', style: TextStyle(fontWeight: FontWeight.bold)),
           if (result.findings.isEmpty)
             const ListTile(title: Text('No red flags found by our rules.')),
