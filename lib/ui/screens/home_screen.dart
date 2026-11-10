@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'history_screen.dart';
 import '../../providers/scan_provider.dart';
 import 'result_screen.dart';
+import 'package:flutter/services.dart';
 
 // Class 1: the widget itself. It holds no logic.
 class HomeScreen extends StatefulWidget {
@@ -36,6 +37,24 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (_) => const ResultScreen()),
     );
   }
+
+  Future<void> _onPaste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (!mounted) return; // the screen may have closed while we waited
+    if (text == null || text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Clipboard is empty.')));
+      return;
+    }
+    // Setting .text in code skips maxLength, so we cut it ourselves.
+    _controller.text = text.length > maxLength
+        ? text.substring(0, maxLength)
+        : text;
+  }
+
+  void _onClear() => _controller.clear();
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +91,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: OutlineInputBorder(),
                   hintText: 'Paste message or link here',
                 ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _onPaste,
+                      icon: const Icon(Icons.content_paste),
+                      label: const Text('Paste'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _onClear,
+                      icon: const Icon(Icons.clear),
+                      label: const Text('Clear'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               FilledButton(onPressed: _onScan, child: const Text('Scan')),
