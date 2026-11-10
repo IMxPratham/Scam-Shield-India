@@ -104,10 +104,6 @@ void main() {
     );
     expect(result.length, 3);
   });
-  test('KNOWN LIMITATION: "expired" in a calendar note is flagged', () {
-    final result = detector.analyze('Meeting invite expired from calendar');
-    expect(result.any((f) => f.reason.contains('urgency')), isTrue);
-  });
   test('"I will pay Rs 500 tomorrow" is not a money request', () {
     final result = detector.analyze('I will pay Rs 500 tomorrow');
     expect(result.any((f) => f.reason.contains('UPI')), isFalse);
@@ -131,4 +127,23 @@ void main() {
       expect(r.any((f) => f.reason.contains('UPI')), isTrue);
     },
   );
+  test('"Meeting invite expired" is not an urgency threat', () {
+    final result = detector.analyze('Meeting invite expired from calendar');
+    expect(result.any((f) => f.reason.contains('urgency')), isFalse);
+  });
+
+  test('"Your KYC will expire today" is still flagged as urgency', () {
+    final result = detector.analyze('Your KYC will expire today');
+    expect(result.any((f) => f.reason.contains('urgency')), isTrue);
+  });
+  test('"Your account has expired" is flagged as urgency', () {
+    final result = detector.analyze('Your account has expired');
+    expect(result.any((f) => f.reason.contains('urgency')), isTrue);
+  });
+
+  test('"Your KYC expired" is counted once, not twice', () {
+    final result = detector.analyze('Your KYC expired');
+    expect(result.length, 1);
+    expect(result.first.reason.contains('KYC'), isTrue);
+  });
 }

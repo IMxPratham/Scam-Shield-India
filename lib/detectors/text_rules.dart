@@ -54,9 +54,10 @@ const List<TextRule> textRules = [
     'immediately',
     'blocked',
     'suspended',
-    'expire',
-    'expires',
-    'expired',
+    'will expire',
+    'expires today',
+    'has expired',
+    'is expired',
   ]),
   TextRule('Claims a prize, lottery or cashback', 20, [
     'you have won',
