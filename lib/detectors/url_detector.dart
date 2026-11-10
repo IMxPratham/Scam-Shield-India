@@ -34,7 +34,9 @@ List<String> _extractLinks(String input) {
   final links = <String>[];
   for (final word in input.split(RegExp(r'\s+'))) {
     final token = word.replaceAll(_edgePunctuation, '');
-    if (token.isNotEmpty && _looksLikeLink(token)) links.add(token);
+    if (token.isNotEmpty && _looksLikeLink(token) && !_looksLikeTypo(token)) {
+      links.add(token);
+    }
   }
   return links;
 }
@@ -45,6 +47,14 @@ bool _looksLikeLink(String token) {
   if (!_bareLink.hasMatch(lower)) return false;
   final host = lower.split(RegExp(r'[/?#:]')).first;
   return bareLinkTlds.contains(host.split('.').last);
+}
+
+// "now.Click" is a missing space after a full stop, not a link.
+// Only applies to bare links: http:// and www. links always count.
+bool _looksLikeTypo(String token) {
+  final lower = token.toLowerCase();
+  if (lower.contains('://') || lower.startsWith('www.')) return false;
+  return RegExp(r'[a-z]\.[A-Z]').hasMatch(token);
 }
 
 // ---------- 2. apply the rules to one link ----------

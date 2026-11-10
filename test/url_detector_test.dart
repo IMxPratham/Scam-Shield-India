@@ -96,4 +96,14 @@ void main() {
       expect(score('Click https://bit.ly/abc.'), 15);
     });
   });
+  test('"Pay now.Click here" has no link', () {
+    expect(detector.analyze('Pay now.Click here'), isEmpty);
+  });
+
+  test('brand name in a news URL path (documenting current behaviour)', () {
+    expect(score('https://example.com/news/sbi-results'), 30);
+  });
+  test('lowercase bare .click link is still flagged', () {
+    expect(score('sbi-kyc.click'), 45);
+  });
 }
