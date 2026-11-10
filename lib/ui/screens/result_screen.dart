@@ -67,7 +67,7 @@ class ResultScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-                    const SizedBox(height: 16),
+          const SizedBox(height: 16),
           if (result.failedChecks > 0)
             Card(
               color: Colors.amber.shade100,
