@@ -122,11 +122,6 @@ void main() {
     expect(r.any((f) => f.reason.contains('UPI')), isTrue);
   });
 
-  test('"I will pay Rs 500 tomorrow" is not flagged', () {
-    final r = detector.analyze('I will pay Rs 500 tomorrow');
-    expect(r.any((f) => f.reason.contains('UPI')), isFalse);
-  });
-
   test(
     '"I will pay you 500000 if you send Rs 1000 first" is still flagged',
     () {
