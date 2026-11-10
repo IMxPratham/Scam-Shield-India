@@ -29,6 +29,7 @@ class ScamShieldApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'ScamShield India',
         theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
         home: const HomeScreen(),

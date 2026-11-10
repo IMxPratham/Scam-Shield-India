@@ -53,28 +53,30 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Paste a suspicious SMS or link. Everything is checked on '
-              'your phone. Nothing is uploaded.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              maxLines: 8,
-              maxLength: maxLength,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Paste message or link here',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Paste a suspicious SMS or link. Everything is checked on '
+                'your phone. Nothing is uploaded.',
               ),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(onPressed: _onScan, child: const Text('Scan')),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                maxLines: 8,
+                maxLength: maxLength,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Paste message or link here',
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(onPressed: _onScan, child: const Text('Scan')),
+            ],
+          ),
         ),
       ),
     );
