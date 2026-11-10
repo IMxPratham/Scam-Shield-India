@@ -7,11 +7,14 @@ class Finding {
 }
 
 /// The final answer: total score (0-100) and the list of reasons.
+/// The final answer: total score (0-100), the list of reasons,
+/// and how many detectors crashed while checking.
 class DetectionResult {
   final int score;
   final List<Finding> findings;
+  final int failedChecks;
 
-  const DetectionResult(this.score, this.findings);
+  const DetectionResult(this.score, this.findings, {this.failedChecks = 0});
 }
 
 /// Every analyzer (text, URL, and future ones) must follow this contract.

@@ -17,6 +17,16 @@ class FakeDetector implements Detector {
   List<Finding> analyze(String input) => findings;
 }
 
+/// A detector that always crashes. Used to test that one bad detector
+/// does not break the whole scan.
+class ThrowingDetector implements Detector {
+  @override
+  String get name => 'throwing';
+
+  @override
+  List<Finding> analyze(String input) => throw StateError('boom');
+}
+
 void main() {
   group('ScanService.scan', () {
     test('empty input gives score 0 and no findings', () {
@@ -73,6 +83,29 @@ void main() {
     });
   });
 
+  test('one detector throwing does not stop the others', () {
+    final service = ScanService([
+      ThrowingDetector(),
+      FakeDetector([Finding('a', 10)]),
+    ]);
+    final result = service.scan('hello');
+    expect(result.score, 10);
+    expect(result.findings.length, 1);
+  });
+  test('failedChecks counts detectors that threw', () {
+    final service = ScanService([
+      ThrowingDetector(),
+      FakeDetector([Finding('a', 10)]),
+    ]);
+    expect(service.scan('hello').failedChecks, 1);
+  });
+
+  test('failedChecks is 0 when every detector works', () {
+    final service = ScanService([
+      FakeDetector([Finding('a', 10)]),
+    ]);
+    expect(service.scan('hello').failedChecks, 0);
+  });
   group('ScanService.verdictFor boundaries', () {
     test('0 and 29 are likely safe', () {
       expect(ScanService.verdictFor(0), Verdict.likelySafe);

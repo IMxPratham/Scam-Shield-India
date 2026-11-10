@@ -1,4 +1,5 @@
 import '../core/detector.dart';
+import 'package:flutter/foundation.dart';
 
 /// The three possible outcomes. An enum stops typos like "High Risk" vs "High risk".
 enum Verdict {
@@ -24,9 +25,17 @@ class ScanService {
     }
 
     // 1. Ask every detector for its findings.
+    // 1. Ask every detector for its findings.
     final all = <Finding>[];
+    var failed = 0;
     for (final detector in detectors) {
-      all.addAll(detector.analyze(text));
+      try {
+        all.addAll(detector.analyze(text));
+      } catch (e) {
+        // One broken detector must not stop the others.
+        failed++;
+        debugPrint('Detector ${detector.name} failed: $e');
+      }
     }
 
     // 2. Biggest reasons first (b compared to a = descending order).
@@ -41,7 +50,7 @@ class ScanService {
       total = maxScore;
     }
 
-    return DetectionResult(total, all);
+    return DetectionResult(total, all, failedChecks: failed);
   }
 
   /// static = belongs to the class, no ScanService object needed.
