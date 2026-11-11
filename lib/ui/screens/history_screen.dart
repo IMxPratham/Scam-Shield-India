@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/scan_record.dart';
 import '../../data/scan_repository.dart';
+import '../../services/scan_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -19,6 +20,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void initState() {
     super.initState();
     _future = context.read<ScanRepository>().getAll();
+  }
+
+  /// History stores the verdict as text, so we map the text back to a colour.
+  Color _colorFor(String verdictLabel) {
+    if (verdictLabel == Verdict.highRisk.label) return Colors.red.shade700;
+    if (verdictLabel == Verdict.suspicious.label) {
+      return Colors.orange.shade800;
+    }
+    return Colors.green.shade700;
   }
 
   Future<void> _confirmDeleteAll() async {
@@ -43,7 +53,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (ok != true) return;
     await repo.deleteAll();
     if (!mounted) return;
-    setState(() => _future = repo.getAll());
+    setState(() {
+      _future = repo.getAll();   
+    });
   }
 
   @override
@@ -70,30 +82,123 @@ class _HistoryScreenState extends State<HistoryScreen> {
           }
           final records = snapshot.data ?? [];
           if (records.isEmpty) {
-            return const Center(child: Text('No scans yet.'));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 72,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No scans yet',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('Scanned messages will appear here.'),
+                ],
+              ),
+            );
           }
-          return ListView.separated(
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: records.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, i) {
               final r = records[i];
-              return ListTile(
-                title: Text(
-                  r.inputPreview,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  '${r.verdict} • ${DateFormat('d MMM, HH:mm').format(r.createdAt)}',
-                ),
-                trailing: Text(
-                  '${r.score}',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _HistoryCard(record: r, color: _colorFor(r.verdict)),
               );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// One saved scan. Tap to see the reasons.
+class _HistoryCard extends StatelessWidget {
+  final ScanRecord record;
+  final Color color;
+
+  const _HistoryCard({required this.record, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final findings = record.findings;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.12),
+          foregroundColor: color,
+          child: Text(
+            '${record.score}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(
+          record.inputPreview,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Wrap(
+            spacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  record.verdict,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Text(
+                DateFormat('d MMM, HH:mm').format(record.createdAt),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        children: [
+          if (findings.isEmpty)
+            const Text('No red flags found by our rules.')
+          else
+            for (final f in findings)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(f.reason)),
+                    Text(
+                      '+${f.points}',
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        ],
       ),
     );
   }
