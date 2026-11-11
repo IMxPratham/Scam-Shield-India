@@ -61,7 +61,7 @@ class ScamShieldApp extends StatelessWidget {
           ),
         ),
         home: const HomeScreen(),
-      ), 
+      ),
     );
   }
 }

@@ -54,7 +54,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     await repo.deleteAll();
     if (!mounted) return;
     setState(() {
-      _future = repo.getAll();   
+      _future = repo.getAll();
     });
   }
 
