@@ -20,13 +20,25 @@ All messages shown are fake examples written for testing.
 
 <p align="center">
   <img src="docs/screenshots/home.jpeg" width="160" alt="Home screen with a pasted fake scam message">
-  <img src="docs/screenshots/result_high.jpeg" width="160" alt="High risk result, score 100">
-  <img src="docs/screenshots/result_suspicious.jpeg" width="160" alt="Suspicious result, score 40">
-  <img src="docs/screenshots/result_safe.jpeg" width="160" alt="Likely safe result, score 0">
+  <img src="docs/screenshots/homescreen_extended.jpeg" width="160" alt="Home screen scrolled down, showing the example chips and what the app checks">
+  <img src="docs/screenshots/result_risk.jpeg" width="160" alt="High risk result with the score ring and the reasons">
+  <img src="docs/screenshots/result_safe.jpeg" width="160" alt="Likely safe result">
   <img src="docs/screenshots/history.jpeg" width="160" alt="Scan history list">
 </p>
 
-From left to right: home, high risk, suspicious, likely safe, history.
+From left to right: home, home scrolled down, high risk result, likely safe
+result, history.
+
+## Features
+
+- Paste a message or link, or tap **Paste** to read your clipboard. The
+  clipboard is read only when you tap the button.
+- Tap a **fake example** chip to try the app without typing.
+- Result screen with an animated score ring, a verdict, every reason with its
+  points, and next steps (helpline **1930**, **cybercrime.gov.in**).
+- A warning when one of the checks could not run, so a crash never looks like
+  "safe".
+- Scan history with a delete-all button. Tap an entry to see its reasons.
 
 ## How the score works
 
@@ -51,19 +63,27 @@ are shown from the biggest contribution to the smallest.
 
 ### Message text rules
 
-| Rule                                  | Points | Example trigger (fake)            |
-| ------------------------------------- | ------ | --------------------------------- |
-| Asks for OTP, PIN, CVV or password    | +25    | "share otp", "your upi pin"       |
-| Creates urgency or threatens you      | +15    | "urgent", "suspended", "blocked"  |
-| Claims a prize, lottery or cashback   | +20    | "you have won", "lucky draw"      |
-| KYC or account verification request   | +20    | "update kyc", "kyc pending"       |
-| UPI collect / money request           | +20    | "collect request", "send rs"      |
-| Legal / arrest threat                 | +20    | "arrest warrant", "court notice"  |
-| Asks you to call a number             | +10    | "call this number"                |
-| Contains a link                       | +5     | "http://..." or "www...."         |
+| Rule                                  | Points | Example trigger (fake)                    |
+| ------------------------------------- | ------ | ----------------------------------------- |
+| Asks for OTP, PIN, CVV or password    | +25    | "share otp", "your upi pin"               |
+| Creates urgency or threatens you      | +15    | "urgent", "suspended", "will expire"      |
+| Claims a prize, lottery or cashback   | +20    | "you have won", "lucky draw"              |
+| KYC or account verification request   | +20    | "update kyc", "kyc expired"               |
+| UPI collect / money request           | +20    | "collect request", "pay 1000", "send rs 500" |
+| Legal / arrest threat                 | +20    | "arrest warrant", "court notice"          |
+| Asks you to call a number             | +10    | "call this number"                        |
+| Contains a link                       | +5     | "http://..." or "www...."                 |
 
-Warnings such as "do not share your OTP" are excluded from the OTP rule, so
-genuine bank reminders are not flagged.
+How some rules avoid false alarms:
+
+- Warnings such as "do not share your OTP" are excluded from the OTP rule, so
+  genuine bank reminders are not flagged.
+- The urgency rule matches phrases ("will expire", "has expired", "is expired"),
+  not the bare word "expired", so "meeting invite expired" is not flagged.
+- The money rule matches `pay`, `send` or `transfer` followed by an amount, with
+  or without "Rs". A promise directly before the verb ("I will pay Rs 500") is
+  ignored.
+- "Your KYC expired" is counted once (as a KYC request), not twice.
 
 ### Link rules
 
@@ -85,12 +105,15 @@ the points.
 | Link starts with `http://` (not HTTPS)                        | +10    |
 | Link is longer than 75 characters                             | +5     |
 
-**Look-alike detection.** The app compares the link's main domain with a small
-list of official domains using the Levenshtein edit distance: the number of
+**Look-alike detection.** The app compares the **first label** of the link's
+main domain (for example `sbi` in `sbi.co.in`) with the same part of each
+official domain, using the Levenshtein edit distance: the number of
 single-letter changes (insert, delete, replace) needed to turn one word into
-another. A distance of 1 or 2 means "very close but not the same", for example
-`sbl.co.in` against `sbi.co.in`. The Levenshtein function is written from
-scratch, without a package.
+another. Names of 5 letters or fewer allow 1 change, longer names allow 2. So
+`sbl.co.in` is flagged as a copy of `sbi.co.in`, `hdfcbnak.com` is flagged as a
+copy of `hdfcbank.com`, and an unrelated name such as `abc.co.in` is not. The
+ending (`.com`, `.co.in`) is ignored in this comparison. The Levenshtein
+function is written from scratch, without a package.
 
 **Brands covered:** State Bank of India, HDFC Bank, ICICI Bank, Axis Bank and
 Paytm. The official domains are listed in `lib/detectors/url_rules.dart`.
@@ -99,7 +122,7 @@ Paytm. The official domains are listed in `lib/detectors/url_rules.dart`.
 
 ```mermaid
 flowchart TD
-    UI["UI screens<br/>home, result, history, about"] --> P["ScanProvider<br/>(state, Provider package)"]
+    UI["UI screens<br/>home, result, history"] --> P["ScanProvider<br/>(state, Provider package)"]
     P --> S["ScanService<br/>runs detectors, sums points, caps at 100"]
     S --> T["TextDetector"]
     S --> U["UrlDetector"]
@@ -125,7 +148,8 @@ lib/
                scan_record.dart           one saved scan
   providers/   scan_provider.dart         state shared with the screens
   ui/screens/  home, result, history screens
-test/          unit tests for detectors, utilities, service, provider, record
+test/          unit tests for detectors, utilities, service, provider,
+               record and repository
 ```
 
 ### Design decisions
@@ -142,11 +166,16 @@ test/          unit tests for detectors, utilities, service, provider, record
   `ScanService` receives a list of detectors, so a new analyzer can be added by
   writing one new class and adding it to the list. The existing detectors do not
   change.
+- **Failure isolation.** `ScanService` wraps each detector call in `try/catch`.
+  If one detector throws, the others still run, the failure is counted in
+  `DetectionResult.failedChecks`, and the Result screen shows a warning.
 - **Rules are data, logic is code.** Keywords, brands and lists live in
   `text_rules.dart` and `url_rules.dart`. Changing a rule does not touch the
   matching code.
 - **Explainable by design.** A `Finding` is a reason plus points. The score is
   only the sum of findings, so the screen can always show why.
+- **Testable database.** `AppDatabase` takes an optional path, so tests can use
+  an in-memory SQLite database while the app uses the real file.
 - **On-device only.** No message is sent anywhere.
 
 ## Privacy design
@@ -163,8 +192,13 @@ messages you are not comfortable having on your phone.
 
 ## Tests and CI
 
-- **101 unit tests** across 7 files: text detector, URL detector, domain
-  utilities, Levenshtein, scan service, scan provider and scan record.
+- **119 unit tests** across 8 files: text detector, URL detector, domain
+  utilities, Levenshtein, scan service, scan provider, scan record and scan
+  repository.
+- Repository tests run against an in-memory SQLite database
+  (`sqflite_common_ffi`, a dev-only dependency).
+- Fixed bugs were first reproduced with a failing test, and a "guard" test
+  checks that the fix did not stop real scams from being caught.
 - GitHub Actions runs `flutter analyze` and `flutter test` on every push and
   pull request to `main`, using a pinned Flutter version (3.44.9).
 - Tests use made-up messages only.
@@ -182,50 +216,71 @@ flutter test
 flutter run
 ```
 
-Run the app on a real Android device or emulator. The history screen uses
-`sqflite`, which does not work in a web browser.
+Run the app on a real Android device. The history screen uses `sqflite`, which
+does not work in a web browser.
 
 ## Known limitations
 
 This is a rule-based tool, so it is easy to fool and it makes mistakes. These
-are the problems I know about.
+are the problems I know about. Items marked "not tested" were reasoned from the
+code and are not covered by a test.
 
 **Message text rules**
 - Rules match exact phrases. Rewording (for example "update your KYC" instead of
-  "update KYC") can slip past them.
-- False positives: "pay Rs" in a friendly message, and "expired" in a normal
-  calendar note, are flagged.
+  "update KYC", or "your KYC is expired") can slip past them. "Your offer
+  expired" is also missed, because only threat phrases are matched.
+- The money rule flags any `pay`, `send` or `transfer` followed by a number, so
+  harmless messages such as "pay 500 for the pizza" are false positives.
 - The "do not share" exception looks at the whole message, so a scammer could
   add that phrase to hide a request for an OTP.
+- Single words such as "blocked" and "suspended" can cause false positives, for
+  example "road blocked" (not tested).
+- Fee-for-reward wording such as "token" or "processing fee" is not a rule. A
+  message like "Pay 1000 for token and win" is caught only by the money rule.
 - The text "contains a link" rule only sees `http://`, `https://` and `www.`,
   so bare domains are missed there.
+- Conversational scams with no link and no trigger words (a friendly
+  "wrong number" hook, a fake boss asking for a payment, a fake job offer) are
+  not detected, because there is nothing for a keyword rule to match (not
+  tested).
+- The rules and brand list are written for Indian scams. Messages that mention
+  services such as USPS, IRS or Zelle mostly score low, apart from generic words
+  such as "urgent" (not tested).
 
 **Link rules**
 - Only 5 brands are covered. The official domain lists have **not been
   independently verified in a browser**, so do not treat them as complete.
+- Look-alike detection compares only the first label of the domain, so the
+  ending is ignored. Short names can also match by chance, and a domain such as
+  `bank.sbi` has the name part `bank` (not tested).
 - Not detected: hidden IP forms such as `http://3232235777`, bare IP addresses
   without `http://`, and brand names without separators such as `sbikyc.xyz`.
 - The "no HTTPS" rule only fires when the link starts with `http://`.
-- Short domains may be flagged as a look-alike of a short brand domain. This
-  was reasoned through by hand and is not yet covered by a test.
-- A link at the end of a sentence without a space, such as `Pay now.Click here`,
-  may be read as a `.click` link (reasoned by hand, not yet tested).
-- Brand name in the path of a legitimate news page can add +30.
+- A bare token with a capital letter right after a dot (such as `now.Click`) is
+  treated as a typo, not a link. This stops `Pay now.Click here` from being read
+  as a `.click` link, but a scammer could use mixed case to avoid the link
+  rules (not tested).
+- A brand name in the path of a legitimate news page adds +30. This is a
+  documented behaviour, because a phishing page and a news page look the same
+  to this rule.
 - Domain handling covers common Indian suffixes such as `co.in`. Suffixes from
   other countries are not handled.
 - One link can be counted by both the text rule (+5) and the link rules.
 
 **Engineering**
 - The database is not encrypted.
-- No automated tests yet for the repository or the screens.
-- If a detector throws an error, the scan fails.
+- If a detector throws an error, the scan continues with the remaining checks
+  and the Result screen shows a warning. History does not record that a check
+  failed.
+- There are no automated tests for the screens (widget tests).
 - Tests that check exact totals must be updated whenever points change.
 
 ## Not built yet
 
 - Opt-in link expander that follows short links. Expanding a link contacts the
   scammer's server, so it will be off by default and clearly explained.
-- Repository tests with an in-memory database.
+- About screen and dark mode.
+- Verifying the official brand domains in a browser, and adding more brands.
 
 ## What to do if you receive a scam
 
