@@ -139,5 +139,20 @@ void main() {
       final result = service.scan('Lunch at 1pm tomorrow?');
       expect(result.score, lessThan(30));
     });
+
+    test('KNOWN LIMITATION: friendly hook message scores 0', () {
+      final r = service.scan(
+        'Hey, are we still meeting for golf tomorrow at 10?',
+      );
+      expect(r.score, 0);
+    });
+
+    test('KNOWN LIMITATION: executive-fraud style message scores 0', () {
+      final r = service.scan(
+        'Hi, are you at your desk? I need you to handle a quick vendor '
+        'payment before the wire cutoff.',
+      );
+      expect(r.score, 0);
+    });
   });
 }
