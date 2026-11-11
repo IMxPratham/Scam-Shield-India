@@ -1,5 +1,5 @@
-import '../core/detector.dart';
 import 'package:flutter/foundation.dart';
+import '../core/detector.dart';
 
 /// The three possible outcomes. An enum stops typos like "High Risk" vs "High risk".
 enum Verdict {
