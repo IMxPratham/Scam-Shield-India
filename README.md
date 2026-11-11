@@ -192,7 +192,7 @@ messages you are not comfortable having on your phone.
 
 ## Tests and CI
 
-- **119 unit tests** across 8 files: text detector, URL detector, domain
+- **121 unit tests** across 8 files: text detector, URL detector, domain
   utilities, Levenshtein, scan service, scan provider, scan record and scan
   repository.
 - Repository tests run against an in-memory SQLite database
@@ -241,8 +241,9 @@ code and are not covered by a test.
   so bare domains are missed there.
 - Conversational scams with no link and no trigger words (a friendly
   "wrong number" hook, a fake boss asking for a payment, a fake job offer) are
-  not detected, because there is nothing for a keyword rule to match (not
-  tested).
+  not detected, because there is nothing for a keyword rule to match. Two
+  KNOWN LIMITATION tests record this for a friendly hook and a fake-boss
+  message.
 - The rules and brand list are written for Indian scams. Messages that mention
   services such as USPS, IRS or Zelle mostly score low, apart from generic words
   such as "urgent" (not tested).
